@@ -194,6 +194,32 @@ convert() {
         logi "Try replace flash script asset ..."
         skip_verity "$TMPDIR/META-INF/com/google/android/updater-script"
         logw "This may not work, if flash failed, try edit flash script by yourself!"
+        logi "Done!"
+    fi
+
+    if [ "$CUSTROM_FIX_WIFI" == "true" ]; then
+        logw "Experienment function, may cause bootloop!"
+        logi "Try inject fix script into updater-script"
+        if [ -f "$TMPDIR/META-INF/com/google/android/updater-script" ]; then
+            cat << EOF >> "$TMPDIR/META-INF/com/google/android/updater-script"
+
+package_extract_file("fix_wifi.sh", "/tmp/fix_wifi.sh");
+set_metadata("/tmp/fix_wifi.sh", "uid", 0, "gid", 0, "mode", 0755);
+ui_print("- Custom rom fix wifi on r7plusm");
+run_program("/tmp/fix_wifi.sh");
+
+EOF
+            logi "Done!"
+
+            logi "Write file fix_wifi.sh -> $TMPDIR ..."
+            cat << EOF >> "$TMPDIR/fix_wifi.sh"
+#!/sbin/sh
+mkdir -p "/data/opponvitems"
+touch "/data/opponvitems/4678"
+chcon -t wcnss_service "/data/opponvitems/4678"
+EOF
+            logi "Done!"
+        fi
     fi
 
     compress "$TMPDIR" "$(echo -e "$INPUT_ZIP" | sed s/\.zip/\_converted\.zip/)"
